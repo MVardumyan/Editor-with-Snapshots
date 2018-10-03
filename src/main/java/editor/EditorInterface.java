@@ -2,9 +2,11 @@ package editor;
 
 import snapshot.CareTaker;
 import snapshot.Memento;
+import snapshot.TextReader;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.xml.soap.Text;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -69,15 +71,9 @@ public class EditorInterface extends JFrame {
                             currentFile = fileChooser.getSelectedFile();
 
                             if(currentFile.exists() && currentFile.canRead()) {
-                                fr = new FileReader(currentFile);
-                                br = new BufferedReader(fr);
-
-                                String c;
-                                while ((c = br.readLine()) != null)
-                                    textArea.append(c + "\n");
-
-                                fr.close();
-                                br.close();
+                                String text = TextReader.getText(currentFile);
+                                textArea.setFont(new Font("Unicode", Font.PLAIN, 15));
+                                textArea.setText(text);
                             } else if(!currentFile.exists()) {
                                 JOptionPane.showMessageDialog(null, "File " + currentFile.getAbsolutePath() + " does not exist", "File not found", JOptionPane.ERROR_MESSAGE);
                             } else if(!currentFile.canRead()) {
