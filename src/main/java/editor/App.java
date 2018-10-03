@@ -14,6 +14,10 @@ public class App
         //editor.setUndecorated(true);
         editor.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
-        Runtime.getRuntime().addShutdownHook(new CareTaker());
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                CareTaker.logSnapshots();
+            }
+        });
     }
 }
