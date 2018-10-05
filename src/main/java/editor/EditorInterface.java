@@ -4,6 +4,7 @@ import fileManips.TextWriter;
 import snapshot.CareTaker;
 import fileManips.TextReader;
 import snapshot.Memento;
+import snapshotManips.SnapshotHandler;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -11,6 +12,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
+import java.util.Date;
 
 /**
  * Created by evarmic on 02-Oct-18.
@@ -24,23 +26,21 @@ public class EditorInterface extends JFrame {
     private JList snapsList;
     private JFileChooser fileChooser;
 
-    private static int count=0;
-
     public EditorInterface() {
         super("Editor with snapshots");
 
         careTaker = new CareTaker();
 
-        JPanel snapsPanel = new JPanel();
+        final JPanel snapsPanel = new JPanel();
         textPanel = new JPanel();
         JPanel buttonPanel1 = new JPanel();
         JPanel buttonPanel2 = new JPanel();
-        JButton rollbackButton = new JButton("Rollback");
+        JButton SwitchToButton = new JButton("Switch to");
         JButton removeButton = new JButton("Remove snapshot");
         listModel = new DefaultListModel();
         snapsList = new JList(listModel);
         textArea  = new JTextArea();
-        JButton saveButton = new JButton("Save");
+        JButton saveButton = new JButton("Save snapshot");
         JButton newFileButton = new JButton("New File");
         JButton openFileButton = new JButton("Open file");
 
@@ -52,15 +52,47 @@ public class EditorInterface extends JFrame {
         snapsPanel.setLayout(new BorderLayout());
         textPanel.setLayout(new BorderLayout());
 
-        //snapshots panel config
+        //SNAPSHOTS PANEL CONFIG
         snapsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         snapsPanel.add(new JScrollPane(snapsList), BorderLayout.CENTER);
         buttonPanel1.setLayout(new FlowLayout());
-        buttonPanel1.add(rollbackButton);
+        buttonPanel1.add(SwitchToButton);
         buttonPanel1.add(removeButton);
         snapsPanel.add(buttonPanel1, BorderLayout.SOUTH);
 
-        //text panel config
+        //Switch To other snapshot listener
+        SwitchToButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int reply = JOptionPane.showConfirmDialog(null, "Are you sure you want to switch to this snapshot?", "Switch to snapshot?", JOptionPane.YES_NO_OPTION);
+                if(reply == JOptionPane.YES_OPTION) {
+                    Date value = (Date) snapsList.getSelectedValue();
+
+                    if(value==null) {
+                        JOptionPane.showMessageDialog(null, "Please select the snapshot first", "No Snapshot selected", JOptionPane.ERROR_MESSAGE);
+                    } else {
+                        String text = SnapshotHandler.switchTo(value, careTaker, currentFile);
+                        textArea.setText(text);
+                    }
+                }
+            }
+        });
+
+        //remove snapshot listener
+        removeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Date value = (Date) snapsList.getSelectedValue();
+                if(value == null) {
+                    JOptionPane.showMessageDialog(null, "Please select the snapshot first", "No Snapshot selected", JOptionPane.ERROR_MESSAGE);
+                } else {
+                    listModel.remove(snapsList.getSelectedIndex());
+                    careTaker.removeSnapshotByDate(value);
+                }
+            }
+        });
+
+        //TEXT PANEL CONFIG
 
         //buttons config
         buttonPanel2.setLayout(new FlowLayout());
@@ -143,6 +175,7 @@ public class EditorInterface extends JFrame {
             }
             });
 
+        textArea.setFont(new Font("UTF8", Font.PLAIN, 15));
         textPanel.add(new JScrollPane(textArea), BorderLayout.CENTER);
         textPanel.add(buttonPanel2, BorderLayout.SOUTH);
 
@@ -156,7 +189,6 @@ public class EditorInterface extends JFrame {
     private void configureSnapshotList() {
         //if(currentFile!=null) {
             listModel.clear();
-            count=0;
             for (Memento snap: careTaker.getSnapshots()) {
                 if(snap.getFile_name().equals(currentFile.getAbsolutePath()))
                     addSnapshotToList(snap);
@@ -165,8 +197,7 @@ public class EditorInterface extends JFrame {
     }
 
     private void addSnapshotToList(Memento snap) {
-        count++;
-        listModel.addElement(count + ". " + snap.getDate_of_change());
+        listModel.addElement(snap.getDate_of_change());
     }
 
     //file chooser config

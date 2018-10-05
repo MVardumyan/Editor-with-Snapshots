@@ -2,18 +2,19 @@ package snapshot;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.zip.GZIPOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * Created by evarmic on 02-Oct-18.
  */
 public class CareTaker {
     private static ArrayList<Memento> snapshots;
-    private FileOutputStream fos;
-    private FileInputStream fis;
-    private ObjectOutputStream output;
-    private ObjectInputStream input;
     private static File log;
     private static int count_of_added_snapshots=0;
+    private static int count_of_removed_snapshots=0;
 
     public CareTaker() {
         snapshots = new ArrayList<Memento>();
@@ -21,8 +22,8 @@ public class CareTaker {
             log = new File("log.ser");
 
             if (log.exists()) {
-                fis = new FileInputStream(log);
-                input = new ObjectInputStream(fis);
+                FileInputStream fis = new FileInputStream(log);
+                ObjectInputStream input = new ObjectInputStream(fis);
 
                 Object result;
                 try {
@@ -53,8 +54,17 @@ public class CareTaker {
     }
 
     public void removeSnapshot(Memento snap) {
-        int index = snapshots.indexOf(snap);
-        snapshots.remove(index);
+        snapshots.remove(snap);
+        count_of_removed_snapshots++;
+    }
+
+    public void removeSnapshotByDate(Date date) {
+        for(Memento snap: snapshots) {
+            if(date.equals(snap.getDate_of_change())) {
+                removeSnapshot(snap);
+                break;
+            }
+        }
     }
 
     public Memento getSnapshot(int id) {
@@ -66,22 +76,41 @@ public class CareTaker {
     }
 
     public static void logSnapshots() {
+        FileOutputStream fos;
+        ObjectOutputStream output;
 
-        if(count_of_added_snapshots>0) {
-            try {
-                FileOutputStream fos = new FileOutputStream(log, true);
-                ObjectOutputStream output = new ObjectOutputStream(fos);
+        try {
+            if (count_of_added_snapshots > 0) {
 
-                for (int i=snapshots.size()-count_of_added_snapshots; i<snapshots.size(); i++)
+                fos = new FileOutputStream(log, true);
+                output = new ObjectOutputStream(fos);
+
+                for (int i = snapshots.size() - count_of_added_snapshots; i < snapshots.size(); i++)
                     output.writeObject(snapshots.get(i));
 
-                fos.close();
                 output.close();
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
+                fos.close();
+
             }
+            if (count_of_removed_snapshots > 0) {
+                //FIND SOME BETTER SOLUTION!
+                log.delete();
+                log.createNewFile();
+                fos = new FileOutputStream(log);
+                output = new ObjectOutputStream(fos);
+
+                for(Memento snap: snapshots)
+                    output.writeObject(snap);
+
+                output.reset();
+
+                output.close();
+                fos.close();
+            }
+        } catch (FileNotFoundException e) {
+                e.printStackTrace();
+        } catch (IOException e) {
+        e.printStackTrace();
         }
     }
 }
