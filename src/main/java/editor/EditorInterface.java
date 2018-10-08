@@ -11,6 +11,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.io.*;
 import java.util.Date;
 
@@ -25,13 +27,14 @@ public class EditorInterface extends JFrame {
     private DefaultListModel listModel;
     private JList snapsList;
     private JFileChooser fileChooser;
+    private JButton saveButton;
 
     public EditorInterface() {
         super("Editor with snapshots");
 
         careTaker = new CareTaker();
 
-        final JPanel snapsPanel = new JPanel();
+        JPanel snapsPanel = new JPanel();
         textPanel = new JPanel();
         JPanel buttonPanel1 = new JPanel();
         JPanel buttonPanel2 = new JPanel();
@@ -40,7 +43,7 @@ public class EditorInterface extends JFrame {
         listModel = new DefaultListModel();
         snapsList = new JList(listModel);
         textArea  = new JTextArea();
-        JButton saveButton = new JButton("Save snapshot");
+        saveButton = new JButton("Save snapshot");
         JButton newFileButton = new JButton("New File");
         JButton openFileButton = new JButton("Open file");
 
@@ -156,7 +159,8 @@ public class EditorInterface extends JFrame {
                         } catch (IOException e1) {
                             JOptionPane.showMessageDialog(null, e1.getMessage(), "IO Exception", JOptionPane.ERROR_MESSAGE);
                         }
-                    }
+                    } else
+                        return; //inner if end
                 } else {
                     int reply = JOptionPane.showConfirmDialog(null, "Do You wish to save current version of file?", "Save file?", JOptionPane.YES_NO_OPTION);
                     if(reply == JOptionPane.YES_OPTION) {
@@ -166,7 +170,11 @@ public class EditorInterface extends JFrame {
                         } catch (IOException e1) {
                             JOptionPane.showMessageDialog(null, e1.getMessage(), "IO Exception", JOptionPane.ERROR_MESSAGE);
                         }
-                    } //if end
+                        Memento snapshot = new Memento(currentFile.getAbsolutePath(), textArea.getText());
+                        careTaker.saveSnapshot(snapshot);
+                        addSnapshotToList(snapshot);
+                    } else
+                        return; // inner if end
                 } // else end
                 //create snapshot
                 Memento snapshot = new Memento(currentFile.getAbsolutePath(), textArea.getText());
@@ -183,6 +191,10 @@ public class EditorInterface extends JFrame {
         add(snapsPanel, BorderLayout.WEST);
         add(textPanel, BorderLayout.CENTER);
 
+        //add CTRL+S shortcut listener
+        SaveListener saveListener = new SaveListener();
+        textArea.addKeyListener(saveListener);
+        snapsList.addKeyListener(saveListener);
     }
 
     //snapshots list config
@@ -209,4 +221,15 @@ public class EditorInterface extends JFrame {
         fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")+"\\Desktop"));
         fileChooser.setLocation(20, 20);
     }
+
+    //CTRL+S configuration
+    private class SaveListener extends KeyAdapter {
+        @Override
+        public void keyPressed(KeyEvent e) {
+            if(e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
+                saveButton.doClick();
+            }
+        }
+    }
+
 }
