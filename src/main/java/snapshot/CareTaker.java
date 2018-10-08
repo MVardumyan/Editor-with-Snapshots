@@ -3,9 +3,6 @@ package snapshot;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.zip.GZIPOutputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 /**
  * Created by evarmic on 02-Oct-18.
@@ -13,8 +10,7 @@ import java.util.zip.ZipOutputStream;
 public class CareTaker {
     private static ArrayList<Memento> snapshots;
     private static File log;
-    private static int count_of_added_snapshots=0;
-    private static int count_of_removed_snapshots=0;
+    private static int count_of_changed_snapshots =0;
 
     public CareTaker() {
         snapshots = new ArrayList<Memento>();
@@ -50,12 +46,12 @@ public class CareTaker {
 
     public void saveSnapshot(Memento snap) {
         snapshots.add(snap);
-        count_of_added_snapshots++;
+        count_of_changed_snapshots++;
     }
 
     public void removeSnapshot(Memento snap) {
         snapshots.remove(snap);
-        count_of_removed_snapshots++;
+        count_of_changed_snapshots++;
     }
 
     public void removeSnapshotByDate(Date date) {
@@ -80,32 +76,17 @@ public class CareTaker {
         ObjectOutputStream output;
 
         try {
-            if (count_of_added_snapshots > 0) {
+            if (count_of_changed_snapshots > 0) {
 
-                fos = new FileOutputStream(log, true);
-                output = new ObjectOutputStream(fos);
-
-                for (int i = snapshots.size() - count_of_added_snapshots; i < snapshots.size(); i++)
-                    output.writeObject(snapshots.get(i));
-
-                output.close();
-                fos.close();
-
-            }
-            if (count_of_removed_snapshots > 0) {
-                //FIND SOME BETTER SOLUTION!
-                log.delete();
-                log.createNewFile();
                 fos = new FileOutputStream(log);
                 output = new ObjectOutputStream(fos);
 
                 for(Memento snap: snapshots)
                     output.writeObject(snap);
 
-                output.reset();
-
                 output.close();
                 fos.close();
+
             }
         } catch (FileNotFoundException e) {
                 e.printStackTrace();
